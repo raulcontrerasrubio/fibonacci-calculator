@@ -1,43 +1,27 @@
-const keys = require('./keys');
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const {Pool} = require('pg');
-const redis = require('redis');
 
+const {client: pgClient, createInitialTables} = require('./config/postgres');
+const {client: redisClient, published: redisPublisher} = require('./config/redis');
+
+/***
+ * SETUP
+ */
+(async () => {
+  await createInitialTables();
+});
+
+/***
+ * MIDDLEWARES
+ */
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-
-const pgClient = new Pool({
-  host: keys.dbHost,
-  database: keys.dbDatabase,
-  port: keys.dbPort,
-  user: keys.dbUser,
-  password: keys.dbPassword,
-});
-
-pgClient.on('error', () => {
-  console.log('Lost Postgres connection');
-});
-
-pgClient.query('CREATE TABLE IF NOT EXISTS values(number INT)')
-  .catch((error) => {
-    console.log(error);
-  });
-
-
-const redisClient = redis.createClient({
-  host: keys.redisHost,
-  port: keys.redisPort,
-  retry_strategy: () => 1000
-});
-
-const redisPublisher = redisClient.duplicate();
-
-
+/***
+ * ROUTES
+ */
 app.get('/', (req, res) => {
   return res.status(200).json({
     working: true
@@ -92,7 +76,7 @@ app.post('/values', async (req, res) => {
       message: 'Internal server error'
     });
   }
-})
+});
 
 app.listen(5000, () => {
   console.log('Listening on port 5000');

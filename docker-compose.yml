@@ -9,6 +9,9 @@ services:
   redis:
     image: redis
   nginx:
+    depends_on: 
+      - api
+      - client
     restart: always
     build:
       dockerfile: Dockerfile.dev
@@ -37,6 +40,11 @@ services:
       DB_PORT: 5432
       DB_USER: pg_user
       DB_PASSWORD: MyS3cur3DB
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f postgres || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
   client:
     stdin_open: true
     build:
