@@ -1,0 +1,45 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: pg_database
+      POSTGRES_USER: pg_user
+      POSTGRES_PASSWORD: MyS3cur3DB
+  redis:
+    image: redis
+    restart: always
+  worker:
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./worker
+    volumes: 
+      - /home/project/worker/node_modules
+      - ./worker:/home/project/worker
+  api:
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./server
+    volumes: 
+      - /home/project/server/node_modules
+      - ./server:/home/project/server
+    environment: 
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DB_HOST: postgres
+      DB_DATABASE: pg_database
+      DB_PORT: 5432
+      DB_USER: pg_user
+      DB_PASSWORD: MyS3cur3DB
+  client:
+    stdin_open: true
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./client
+    volumes:
+      - /home/project/client/node_modules
+      - ./client:/home/project/client
