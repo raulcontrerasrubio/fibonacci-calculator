@@ -20,3 +20,18 @@ after_success:
   - docker push raulcontrerasrubio/fibonacci-nginx
   - docker push raulcontrerasrubio/fibonacci-server
   - docker push raulcontrerasrubio/fibonacci-worker
+
+# Create a new IAM which is only capable of deploy an EB app
+deploy:
+  # edge: true # If it were a persistent error of missing bucket_name
+  provider: elasticbeanstalk
+  region: us-west-2
+  app: "fibonacci-app"
+  env: "FibApp-env"
+  bucket_name: "name of the bucket"
+  bucket_path: "path of the bucket"
+  on:
+    branch: master
+  access_key_id: $AWS_ACCESS_KEY
+  secret_access_key:
+    secure: $AWS_SECRET_KEY

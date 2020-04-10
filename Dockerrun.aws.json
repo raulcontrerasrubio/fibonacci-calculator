@@ -1,0 +1,41 @@
+{
+  "AWSEBDockerrunVersion": 2,
+  "containerDefinitions": [
+    {
+      "name": "client",
+      "image": "raulcontrerasrubio/fibonacci-client",
+      "hostname": "client",
+      "memory": 128,
+      "essential": false
+    },
+    {
+      "name": "server",
+      "image": "raulcontrerasrubio/fibonacci-server",
+      "hostname": "api",
+      "memory": 128,
+      "essential": false
+    },
+    {
+      "name": "worker",
+      "image": "raulcontrerasrubio/fibonacci-worker",
+      "essential": false,
+      "memory": 128
+    },
+    {
+      "name": "nginx",
+      "image": "raulcontrerasrubio/fibonacci-nginx",
+      "essential": true,
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "containerPort": 80
+        }
+      ],
+      "memory": 128,
+      "links": [
+        "server",
+        "client"
+      ]
+    }
+  ]
+}
