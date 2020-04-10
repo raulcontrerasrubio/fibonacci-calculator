@@ -1,24 +1,29 @@
-import React from 'react';
-import {Switch, Route, Redirect, Link} from 'react-router-dom';
-import Fib from './Fib';
-import OtherPage from './OtherPage';
+import React, { Component } from 'react';
+import logo from './logo.svg';
 import './App.css';
+import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import OtherPage from './OtherPage';
+import Fib from './Fib';
 
-function App() {
-  return (
-    <div className="App">
-      <header>
-        <h1>Welcome to Fibonacci calculator</h1>
-        <Link to="/">Calculator</Link>
-        <Link to="/other-page">Other Page</Link>
-      </header>
-      <Switch>
-        <Route exact path="/" component={Fib}/>
-        <Route exact path="/other-page" component={OtherPage} />
-        <Route render={() => <Redirect to="/"/>}/>
-      </Switch>
-    </div>
-  );
+class App extends Component {
+  render() {
+    return (
+      <Router>
+        <div className="App">
+          <header className="App-header">
+            <img src={logo} className="App-logo" alt="logo" />
+            <h1 className="App-title">Welcome to React</h1>
+            <Link to="/">Home</Link>
+            <Link to="/otherpage">Other Page</Link>
+          </header>
+          <div>
+            <Route exact path="/" component={Fib} />
+            <Route path="/otherpage" component={OtherPage} />
+          </div>
+        </div>
+      </Router>
+    );
+  }
 }
 
 export default App;

@@ -1,11 +1,11 @@
-import React, { Component } from "react";
-import axios from "axios";
+import React, { Component } from 'react';
+import axios from 'axios';
 
 class Fib extends Component {
   state = {
     seenIndexes: [],
     values: {},
-    index: "",
+    index: ''
   };
 
   componentDidMount() {
@@ -13,57 +13,64 @@ class Fib extends Component {
     this.fetchIndexes();
   }
 
-  fetchValues = async () => {
-    const values = await axios.get("/api/values/current");
-    this.setState({ values: values.data.data });
+  async fetchValues() {
+    const values = await axios.get('/api/values/current');
+    this.setState({ values: values.data });
   }
 
-  fetchIndexes = async () => {
-    const seenIndexes = await axios.get("/api/values/all");
-    this.setState({ seenIndexes: seenIndexes.data.data });
+  async fetchIndexes() {
+    const seenIndexes = await axios.get('/api/values/all');
+    this.setState({
+      seenIndexes: seenIndexes.data
+    });
   }
 
-  handleSubmit = async (e) => {
-    e.preventDefault();
+  handleSubmit = async event => {
+    event.preventDefault();
 
     await axios.post('/api/values', {
       index: this.state.index
     });
-    this.setState({
-      index: ''
-    });
+    this.setState({ index: '' });
+  };
+
+  renderSeenIndexes() {
+    return this.state.seenIndexes.map(({ number }) => number).join(', ');
   }
 
-  renderSeenIndexes = () => {
-    return this.state.seenIndexes.map(({number}) => number).join(', ');
+  renderValues() {
+    const entries = [];
+
+    for (let key in this.state.values) {
+      entries.push(
+        <div key={key}>
+          For index {key} I calculated {this.state.values[key]}
+        </div>
+      );
+    }
+
+    return entries;
   }
 
-  renderCalculatedValues = () => {
-    return Object.entries(this.state.values).map(([index, value]) => (
-      <div key={index}>
-        <span>For index {index} I calculated {value}</span>
-      </div>
-    ));
-  }
-
-  render(){
+  render() {
     return (
       <div>
         <form onSubmit={this.handleSubmit}>
           <label>Enter your index:</label>
-          <input value={this.state.index} onChange={e => this.setState({index: e.target.value})}/>
+          <input
+            value={this.state.index}
+            onChange={event => this.setState({ index: event.target.value })}
+          />
           <button>Submit</button>
         </form>
-        <div>
-          <h3>Indexes I have seen</h3>
-          {this.renderSeenIndexes()}
-        </div>
-        <div>
-          <h3>Calculated values</h3>
-          {this.renderCalculatedValues()}
-        </div>
+
+        <h3>Indexes I have seen:</h3>
+        {this.renderSeenIndexes()}
+
+        <h3>Calculated Values:</h3>
+        {this.renderValues()}
       </div>
-    )
+    );
   }
 }
 
