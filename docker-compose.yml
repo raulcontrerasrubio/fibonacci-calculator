@@ -1,13 +1,16 @@
-version: '3'
+version: '3.4'
+
 services:
   postgres:
     image: postgres:latest
+    restart: always
     environment:
-      POSTGRES_DB: pg_database
-      POSTGRES_USER: pg_user
-      POSTGRES_PASSWORD: MyS3cur3DB
+      POSTGRES_PASSWORD: postgres_password
+
   redis:
     image: redis
+    restart: always
+
   nginx:
     depends_on: 
       - api
@@ -18,6 +21,7 @@ services:
       context: ./nginx
     ports: 
       - '3050:80'
+
   worker:
     build:
       dockerfile: Dockerfile.dev
@@ -25,7 +29,11 @@ services:
     volumes: 
       - /home/project/worker/node_modules
       - ./worker:/home/project/worker
+
   api:
+    depends_on: 
+      - redis
+      - postgres
     build:
       dockerfile: Dockerfile.dev
       context: ./server
@@ -33,18 +41,14 @@ services:
       - /home/project/server/node_modules
       - ./server:/home/project/server
     environment: 
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      DB_HOST: postgres
-      DB_DATABASE: pg_database
-      DB_PORT: 5432
-      DB_USER: pg_user
-      DB_PASSWORD: MyS3cur3DB
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f postgres || exit 1"]
-      interval: 5s
-      timeout: 10s
-      retries: 5
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DB_HOST=postgres
+      - DB_DATABASE=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres_password
+      
   client:
     stdin_open: true
     build:

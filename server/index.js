@@ -1,83 +1,71 @@
+const {dbDatabase, dbHost, dbUser, dbPassword, dbPort, redisHost, redisPort} = require('./keys');
+
+// Express App Setup
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-const {client: pgClient, createInitialTables} = require('./config/postgres');
-const {client: redisClient, published: redisPublisher} = require('./config/redis');
-
-/***
- * SETUP
- */
-(async () => {
-  await createInitialTables();
-});
-
-/***
- * MIDDLEWARES
- */
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-/***
- * ROUTES
- */
+// Postgres Client Setup
+const { Pool } = require('pg');
+
+const pgClient = new Pool({
+  user: dbUser,
+  host: dbHost,
+  database: dbDatabase,
+  password: dbPassword,
+  port: dbPort
+});
+pgClient.on('error', () => console.log('Lost PG connection'));
+
+pgClient
+  .query('CREATE TABLE IF NOT EXISTS values (number INT)')
+  .catch(err => console.log(err));
+
+// Redis Client Setup
+const redis = require('redis');
+const redisClient = redis.createClient({
+  host: redisHost,
+  port: redisPort,
+  retry_strategy: () => 1000
+});
+const redisPublisher = redisClient.duplicate();
+
+// Express route handlers
+
 app.get('/', (req, res) => {
-  return res.status(200).json({
-    working: true
-  });
+  res.send('Hi');
 });
 
 app.get('/values/all', async (req, res) => {
-  try{
-    const values = await pgClient.query('SELECT * FROM values');
+  const values = await pgClient.query('SELECT * from values');
 
-    return res.status(200).json({
-      data: values.rows
-    });;
-  }catch(error){
-    return res.status(500).json({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Internal server error'
-    });
-  }
+  res.send(values.rows);
 });
 
-app.get('/values/current', (req, res) => {
+app.get('/values/current', async (req, res) => {
   redisClient.hgetall('values', (err, values) => {
-    return res.status(200).json({
-      data: values
-    });
+    res.send(values);
   });
 });
 
 app.post('/values', async (req, res) => {
-  try{
-    const index = req.body.index;
+  const index = req.body.index;
 
-    if(parseInt(index) > 40){
-      return res.status(422).json({
-        error: 'HIGH_NUMBER_NOT_SUPPORTED',
-        message: 'High values are not supported'
-      });
-    }
-
-    redisClient.hset('values', index, 'Nothing yet!');
-    redisPublisher.publish('insert', index);
-    pgClient.query(`INSERT INTO values(number) VALUES($1)`, [index]);
-
-    res.status(200).json({
-      working: true
-    });
-
-  }catch(error){
-    return res.status(500).json({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Internal server error'
-    });
+  if (parseInt(index) > 40) {
+    return res.status(422).send('Index too high');
   }
+
+  redisClient.hset('values', index, 'Nothing yet!');
+  redisPublisher.publish('insert', index);
+  pgClient.query('INSERT INTO values(number) VALUES($1)', [index]);
+
+  res.send({ working: true });
 });
 
-app.listen(5000, () => {
-  console.log('Listening on port 5000');
-})
+app.listen(5000, err => {
+  console.log('Listening');
+});
